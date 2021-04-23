@@ -2,8 +2,9 @@ import math
 
 from sqlalchemy.orm import sessionmaker
 
-from app import engine
-from app.tables import User, Post
+from app import db
+from app.tables import UserModel
+from app.tables import PostModel
 
 
 def iter_pages_(page_now, len_posts, post_per_page):
@@ -22,15 +23,11 @@ def iter_pages_(page_now, len_posts, post_per_page):
 
 
 def total_users():
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    return session.query(User).count()
+    return len(list(UserModel.query.all()))
 
 
 def total_posts():
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    return session.query(Post).count()
+    return len(list(PostModel.query.all()))
 
 
 def days_to_summer():

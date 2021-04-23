@@ -1,10 +1,7 @@
 from datetime import datetime
 from flask import Flask
-from sqlalchemy.orm import sessionmaker
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_marshmallow import Marshmallow
@@ -12,10 +9,7 @@ from app.config import Config
 
 
 db = SQLAlchemy()
-engine = create_engine('sqlite:///login.db', echo=False)
-Base = declarative_base()
-
-Base.metadata.create_all(engine)
+ma = Marshmallow()
 
 
 bcrypt = Bcrypt()
@@ -30,6 +24,7 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(Config)
     db.init_app(app)
+    ma.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
     mail.init_app(app)
@@ -43,3 +38,6 @@ def create_app(config_class=Config):
     app.register_blueprint(errors)
 
     return app
+
+
+# db.create_all(app=create_app())
