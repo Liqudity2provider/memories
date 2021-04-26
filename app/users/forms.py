@@ -21,7 +21,7 @@ class RegForm(FlaskForm):
             raise ValidationError('This name is taken. Please choose another')
 
     def validate_email(self, email):
-        exists = db.session.query(UserModel).filter_by(email=email.data).first()
+        exists = UserModel.query.filter_by(email=email.data).first()
         if exists:
             raise ValidationError('This email is taken. Please choose another')
 
@@ -45,13 +45,13 @@ class UpdateAccountForm(FlaskForm):
     def validate_username(self, username):
 
         if username.data != current_user.username:
-            exists = db.session.query(UserModel).filter_by(username=username.data).first()
+            exists = UserModel.query.filter_by(username=username.data).first()
             if exists:
                 raise ValidationError('This name is taken. Please choose another')
 
     def validate_email(self, email):
         if email.data != current_user.email:
-            exists = db.session.query(UserModel).filter_by(email=email.data).first()
+            exists = UserModel.query.filter_by(email=email.data).first()
             if exists:
                 raise ValidationError('This email is taken. Please choose another')
 
@@ -61,7 +61,7 @@ class RequestResetForm(FlaskForm):
     submit = SubmitField('Reset password')
 
     def validate_email(self, email):
-        exists = db.session.query(UserModel).filter_by(email=email.data).first()
+        exists = UserModel.query.filter_by(email=email.data).first()
         if exists is None:
             raise ValidationError('There is no account with that email. Please register first.')
 

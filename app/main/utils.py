@@ -23,11 +23,11 @@ def iter_pages_(page_now, len_posts, post_per_page):
 
 
 def total_users():
-    return len(list(UserModel.query.all()))
+    return UserModel.query.count()
 
 
 def total_posts():
-    return len(list(PostModel.query.all()))
+    return PostModel.query.count()
 
 
 def days_to_summer():
