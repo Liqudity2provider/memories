@@ -4,8 +4,8 @@ from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextA
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from flask_login import current_user
 from flask_wtf.file import FileField, FileAllowed
-from app import engine, db
-from app.tables import User
+from app import db
+from app.tables import UserModel
 
 
 class RegForm(FlaskForm):
@@ -16,16 +16,12 @@ class RegForm(FlaskForm):
     submit = SubmitField('Sign in')
 
     def validate_username(self, username):
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        exists = session.query(User).filter_by(username=username.data).first()
+        exists = db.session.query(UserModel).filter_by(username=username.data).first()
         if exists:
             raise ValidationError('This name is taken. Please choose another')
 
     def validate_email(self, email):
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        exists = session.query(User).filter_by(email=email.data).first()
+        exists = UserModel.query.filter_by(email=email.data).first()
         if exists:
             raise ValidationError('This email is taken. Please choose another')
 
@@ -47,18 +43,15 @@ class UpdateAccountForm(FlaskForm):
     submit = SubmitField('Update')
 
     def validate_username(self, username):
-        Session = sessionmaker(bind=engine)
-        session = Session()
+
         if username.data != current_user.username:
-            exists = session.query(User).filter_by(username=username.data).first()
+            exists = UserModel.query.filter_by(username=username.data).first()
             if exists:
                 raise ValidationError('This name is taken. Please choose another')
 
     def validate_email(self, email):
-        Session = sessionmaker(bind=engine)
-        session = Session()
         if email.data != current_user.email:
-            exists = session.query(User).filter_by(email=email.data).first()
+            exists = UserModel.query.filter_by(email=email.data).first()
             if exists:
                 raise ValidationError('This email is taken. Please choose another')
 
@@ -68,9 +61,7 @@ class RequestResetForm(FlaskForm):
     submit = SubmitField('Reset password')
 
     def validate_email(self, email):
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        exists = session.query(User).filter_by(email=email.data).first()
+        exists = UserModel.query.filter_by(email=email.data).first()
         if exists is None:
             raise ValidationError('There is no account with that email. Please register first.')
 

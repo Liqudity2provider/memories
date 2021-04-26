@@ -4,7 +4,7 @@ from email.mime.text import MIMEText
 from PIL import Image
 from flask import url_for
 import secrets
-from app import mail
+from app import mail, Config
 from flask import current_app
 from flask_mail import Message
 import pyrebase
@@ -54,47 +54,20 @@ def send_reset_email(user):
     smtpObj.login('commerce.tf@gmail.com', 'alex2811')
 
     token = user.get_reset_token()
-#     print(token)
-#
-#     msg = Message('Password Reset Request',
-#                   sender='commerce.tf@gmail.com',
-#                   recipients=[user.email])
-#     msg.body = f'''To reset your password , visit the following link:
-# {url_for('users.reset_token', token=token, _external=True)}
-#
-# IF YOUR DONT MAKE THIS REQUEST IGNORE THIS EMAIL
-#     '''
-#
-#     mail.send(msg)
-    msg_ = "From:"
-    # msg = MIMEText('<a href="www.google.com">abc</a>', 'html')
+
     msg = '\n' + f'{url_for("users.reset_token", token=token, _external=True)}'
-    # print(msg)
     smtpObj.sendmail(from_addr="commerce.tf@gmail.com", to_addrs=user.email, msg=msg)
-    # smtpObj.close()
-
-
-config = {
-    'apiKey': "AIzaSyC_S0lPqRUwsbNJ0x-i-kv8RrHd5Coyqw8",
-    'authDomain': "memories-9ec47.firebaseapp.com",
-    'projectId': "memories-9ec47",
-    'serviceAccount': 'serviceAccountKeyFirebase.json',
-    'databaseURL': 'gs://memories-9ec47.appspot.com',
-    'storageBucket': "memories-9ec47.appspot.com",
-    # 'messagingSenderId': "132715411999",
-    # 'appId': "1:132715411999:web:1655dc229486eab8ba732a"
-}
 
 
 def put_image(path_to_file, filename, new_filename):
-    firebase_storage = pyrebase.initialize_app(config)
+    firebase_storage = pyrebase.initialize_app(config=Config.FIREBASE_CONFIG)
     storage = firebase_storage.storage()
     storage.child(new_filename).put(path_to_file + filename)
     return get_url_of_image(new_filename)
 
 
 def get_url_of_image(firebase_file_name):
-    firebase_storage = pyrebase.initialize_app(config)
+    firebase_storage = pyrebase.initialize_app(Config.FIREBASE_CONFIG)
     storage = firebase_storage.storage()
 
     email = 'commerce.tf@gmail.com'

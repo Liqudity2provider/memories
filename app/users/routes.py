@@ -1,16 +1,13 @@
 from flask import Blueprint
 from flask import render_template, url_for, flash, redirect, request, abort
-from sqlalchemy.orm import sessionmaker
 from app.main.utils import iter_pages_, total_users, days_to_summer, total_posts
-from app.tables import User, Post
-from app import bcrypt, db, Base, mail
-from app import engine
+from app.tables import UserModel, PostModel
+from app import bcrypt, db, mail
 from flask_login import login_user, current_user, logout_user, login_required
 from app.users.forms import RegForm, LoginForm, UpdateAccountForm, RequestResetForm, ResetPasswordForm
 from app.users.utils import save_picture_thumb, send_reset_email
 
 users = Blueprint('users', __name__)
-Base.metadata.create_all(engine)
 
 
 @users.route('/register', methods=['GET', 'POST'])
@@ -20,12 +17,10 @@ def register():
     form = RegForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        new_user = User(username=form.username.data, email=form.email.data, password=hashed_password)
-        Session = sessionmaker(bind=engine)
-        session = Session()
+        new_user = UserModel(username=form.username.data, email=form.email.data, password=hashed_password)
         try:
-            session.add(new_user)
-            session.commit()
+            db.session.add(new_user)
+            db.session.commit()
             flash(f'Account created for {form.username.data}!', 'success')
             return redirect(url_for('users.login'))
         except:
@@ -42,9 +37,7 @@ def login():
         return redirect(url_for('main.home'))
     form = LoginForm()
     if form.validate_on_submit():
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        user = session.query(User).filter_by(email=form.email.data).first()
+        user = db.session.query(UserModel).filter_by(email=form.email.data).first()
 
         if user and bcrypt.check_password_hash(user.password, form.password.data):
             login_user(user, remember=form.remember.data)
@@ -66,18 +59,16 @@ def logout():
 @users.route('/account', methods=['POST', 'GET'])
 @login_required
 def account():
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    current_user_db = session.query(User).get(current_user.id)
+    current_user_db = db.session.query(UserModel).get(current_user.id)
     form = UpdateAccountForm()
     if form.picture.data:
         picture_file = save_picture_thumb(form.picture.data)
         current_user_db.image_file = picture_file
-        session.commit()
+        db.session.commit()
     if form.validate_on_submit():
         current_user_db.username = form.username.data
         current_user_db.email = form.email.data
-        session.commit()
+        db.session.commit()
     form.username.data = current_user_db.username
     form.email.data = current_user_db.email
     current_user.username = form.username.data
@@ -90,15 +81,13 @@ def account():
 @users.route('/user/<string:username>')
 def user_posts(username):
     page = request.args.get('page', default=1, type=int)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    user = session.query(User).filter_by(username=username).first()
+    user = db.session.query(UserModel).filter_by(username=username).first()
     per_page = 5
 
-    posts = session.query(Post).filter_by(user_id=user.id)
+    posts = db.session.query(PostModel).filter_by(user_id=user.id)
     len_posts = len(list(posts))
     iter_pages = iter_pages_(page, len_posts, per_page)
-    posts = session.query(Post).filter_by(user_id=user.id).order_by(Post.date_posted.desc()).slice(
+    posts = db.session.query(PostModel).filter_by(user_id=user.id).order_by(PostModel.date_posted.desc()).slice(
         0 + per_page * (page - 1), per_page + per_page * (page - 1))
     return render_template('user_posts.html', posts=posts, user=user, iter_pages=iter_pages, len_posts=len_posts,
                            total_users=total_users(),
@@ -111,9 +100,7 @@ def reset_request():
         return redirect(url_for('main.home'))
     form = RequestResetForm()
     if form.validate_on_submit():
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        user = session.query(User).filter_by(email=form.email.data).first()
+        user = db.session.query(UserModel).filter_by(email=form.email.data).first()
         send_reset_email(user)
         flash('An email was sent with the instructions to reset your password', 'info')
         return redirect(url_for('users.login'))
@@ -125,18 +112,16 @@ def reset_request():
 def reset_token(token):
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))
-    user = User.verify_reset_token(token)
+    user = UserModel.verify_reset_token(token)
     if user is None:
         flash('That is an invalid or expired token', 'warning')
         return redirect(url_for('users.reset_request'))
     form = ResetPasswordForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        user_db = session.query(User).get(user.id)
+        user_db = db.session.query(UserModel).get(user.id)
         user_db.password = hashed_password
-        session.commit()
+        db.session.commit()
         flash(f'Password was changed!', 'success')
         return redirect(url_for('users.login'))
 
